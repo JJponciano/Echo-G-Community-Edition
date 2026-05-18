@@ -3,11 +3,12 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
 [![License: EGRL v1.0](https://img.shields.io/badge/license-EGRL%20v1.0-lightgrey)](LICENSE)
 [![Ollama](https://img.shields.io/badge/inference-Ollama-orange)](https://ollama.com)
+[![DOI](https://zenodo.org/badge/1242345747.svg)](https://doi.org/10.5281/zenodo.20269825)
 
 > **ECHO-G: Evidence-Centered Hybrid Ontologization with Semantic Idempotence Evaluation using Local Mixture-of-Experts Language Models**  
-> Claire Ponciano · Markus Schaffert · Jean-Jacques Ponciano  
+> Claire Ponciano and Jean-Jacques Ponciano  
 > i3mainz – Institute for Spatial Information and Surveying Technology, Hochschule Mainz  
-> *Submitted to IC3K / KEOD 2026 (SCITEPRESS)*
+> *Submitted to WEBIST 2026 (SCITEPRESS)*
 
 ---
 
@@ -237,21 +238,6 @@ Echo-G-Community-Edition/
 ---
 
 ## Citation
-
-If you use ECHO-G in your research, please cite:
-
-```bibtex
-@inproceedings{ponciano2026echog,
-  author    = {Ponciano, Claire and Schaffert, Markus and Ponciano, Jean-Jacques},
-  title     = {{ECHO-G: Evidence-Centered Hybrid Ontologization with Semantic
-                Idempotence Evaluation using Local Mixture-of-Experts Language Models}},
-  booktitle = {Proceedings of the 18th International Conference on Knowledge
-               Engineering and Ontology Development (KEOD)},
-  year      = {2026},
-  publisher = {SciTePress},
-  note      = {To appear}
-}
-```
 
 This work builds on:
 
