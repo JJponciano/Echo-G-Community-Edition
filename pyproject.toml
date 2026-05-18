@@ -1,0 +1,28 @@
+[project]
+name = "echo-g"
+version = "1.0.0"
+description = "Evidence-Centered Hybrid Ontologization with Semantic Idempotence Evaluation"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Claire Ponciano" },
+  { name = "Markus Schaffert" },
+  { name = "Jean-Jacques Ponciano" },
+]
+keywords = [
+  "ontology",
+  "knowledge graph",
+  "large language models",
+  "RDF",
+  "semantic web",
+  "provenance",
+  "local inference",
+]
+dependencies = [
+  "ollama",
+  "pdfplumber",
+  "rdflib",
+]
+
+[project.urls]
+Repository = "https://github.com/JJponciano/Echo-G-Community-Edition"

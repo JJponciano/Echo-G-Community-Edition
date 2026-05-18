@@ -1,69 +1,238 @@
-# Echo-G-Community-Edition
-Evidence-Centered Hybrid Ontologization
+# ECHO-G: Evidence-Centered Hybrid Ontologization
 
-Echo-G is a research-oriented platform developed by Jean-Jacques Ponciano for ontology construction, semantic knowledge organization, evidence-centered reasoning, and AI-assisted expert workflows.
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
+[![License: EGRL v1.0](https://img.shields.io/badge/license-EGRL%20v1.0-lightgrey)](LICENSE)
+[![Ollama](https://img.shields.io/badge/inference-Ollama-orange)](https://ollama.com)
 
-The project focuses on bridging:
-
-- ontology engineering
-- semantic web technologies
-- knowledge-grounded AI
-- local LLM systems
-- expert reasoning workflows
-- scientific and medical knowledge management
-
-Echo-G is designed for researchers, engineers, and institutions seeking reproducible, explainable, and knowledge-driven AI systems.
+> **ECHO-G: Evidence-Centered Hybrid Ontologization with Semantic Idempotence Evaluation using Local Mixture-of-Experts Language Models**  
+> Claire Ponciano · Markus Schaffert · Jean-Jacques Ponciano  
+> i3mainz – Institute for Spatial Information and Surveying Technology, Hochschule Mainz  
+> *Submitted to IC3K / KEOD 2026 (SCITEPRESS)*
 
 ---
 
-## Main Objectives
+## Overview
 
-- Build ontologies from heterogeneous sources
-- Structure expert knowledge from documents and evidence
-- Support local AI workflows using Large Language Models
-- Enable semantic reasoning and knowledge-grounded retrieval
-- Facilitate reproducible scientific workflows
-- Support human-centered AI systems
+Large language models have made the automatic construction of knowledge graphs from unstructured documents practical, yet the resulting graphs are hard to audit: extracted statements rarely carry traceable evidence, and no standard criterion exists to quantify whether the graph faithfully represents the source.
 
----
+**ECHO-G** (*Evidence-Centered Hybrid Ontologization – Generic*) addresses both gaps simultaneously:
 
-## Core Features
+1. **Auditability** – every assertion is materialised as a named `echo:ExtractedFact` node carrying source span, confidence score, certainty, polarity, validation status, and PROV-O-aligned provenance. Vocabulary outside the user-supplied T-Box is logged as an `echog:OntologyAdditionProposal` rather than silently fabricated.
 
-- Ontology construction workspace
-- Evidence-centered knowledge extraction
-- Semantic graph generation
-- AI-assisted knowledge organization
-- Local LLM integration
-- Retrieval-Augmented Generation (RAG)
-- Graph-based reasoning workflows
-- Scientific document processing
-- Knowledge-grounded assistant pipelines
+2. **Quantitative evaluation** – we introduce *semantic idempotence* as an intrinsic faithfulness criterion: the document, after the round trip **PDF → Markdown → RDF/Turtle → Markdown′**, should preserve every source fact and invent none. This is operationalised through LLM-based atomic fact extraction with embedding-based fuzzy matching, yielding recall, precision, and hallucination-rate metrics without requiring a gold-standard ontology.
+
+The entire pipeline — including evaluation — runs on a single workstation through [Ollama](https://ollama.com) using the Qwen3 Mixture-of-Experts open-weights model.
 
 ---
 
-## Research Orientation
+## Pipeline
 
-Echo-G is developed as part of ongoing research activities in:
+```
+  ┌──────────────┐     pdf_to_markdown      ┌────────────────────┐
+  │   PDF (src)  │ ───────────────────────► │  Markdown (source) │
+  └──────────────┘                          └────────┬───────────┘
+                                                     │ pdf_to_ontology
+                                                     │ (chunked uplift)
+                                                     ▼
+  ┌────────────────────┐   ontology_to_markdown  ┌──────────────────────┐
+  │ Markdown′ (recon.) │ ◄─────────────────────  │  RDF/Turtle (ECHO-G) │
+  └────────┬───────────┘                         └──────────────────────┘
+           │
+           │ compare_semantics  (cosine similarity, τ = 0.78)
+           ▼
+  recall · precision · hallucination-rate
+```
 
-- Artificial Intelligence
-- Computer Vision
-- Semantic Web
-- Knowledge Representation
-- Medical AI
-- Expert Systems
+| Stage | Script | Description |
+|-------|--------|-------------|
+| PDF → Markdown | `pdf_to_markdown.py` | Extracts text while preserving headings, paragraphs, and page breaks via `pdfplumber`. |
+| Markdown → RDF/Turtle | `pdf_to_ontology.py` | Chunked uplift: paragraph-aware splitting, per-chunk IRI prefixes, entity coalescing, exponential-backoff retry. Every assertion is reified as `echo:ExtractedFact`. |
+| RDF/Turtle → Markdown′ | `ontology_to_markdown.py` | Traverses the reified graph and reconstructs a natural-language narrative (downlift). |
+| Evaluation | `compare_semantics.py` | Extracts atomic facts from both documents via LLM, embeds each with `nomic-embed-text`, and computes fuzzy-match metrics. |
+| End-to-end harness | `evaluate_pipeline.py` | Runs the full round trip for each PDF, writes per-document JSON reports and an aggregate `summary.json`. |
 
-The project promotes transparent, explainable, and human-centered AI approaches.
+---
+
+## Installation
+
+**Prerequisites:** Python 3.12+, [Ollama](https://ollama.com) running locally with:
+
+```bash
+ollama pull qwen3:30b-a3b-q4_K_M   # uplift and fact-extraction (requires >= 24 GB GPU VRAM)
+ollama pull nomic-embed-text        # semantic similarity
+```
+
+**Install Python dependencies:**
+
+```bash
+pip install -e .
+```
+
+Or directly:
+
+```bash
+pip install ollama pdfplumber rdflib
+```
+
+---
+
+## Quick Start
+
+### Single document
+
+```bash
+# Step 1 – PDF to Markdown
+python pdf_to_markdown.py my_document.pdf --out my_document.md
+
+# Step 2 – Uplift: Markdown to RDF/Turtle
+python pdf_to_ontology.py my_document.pdf \
+    --tbox ontology/echo-core.ttl \
+    --out  my_document.ttl
+
+# Step 3 – Downlift: RDF/Turtle to Markdown
+python ontology_to_markdown.py my_document.ttl --out my_document_reconstructed.md
+
+# Step 4 – Evaluate semantic idempotence
+python compare_semantics.py my_document.md my_document_reconstructed.md
+```
+
+### End-to-end evaluation over a folder
+
+```bash
+python evaluate_pipeline.py \
+    --input-dir eval/sources/hantavirus/ \
+    --tbox      ontology/echo-core.ttl \
+    --out       eval/runs/my_run
+```
+
+Results are written to `eval/runs/my_run/summary.json`.  
+Resume after interruption by re-running the same command (completed documents are skipped automatically).  
+Use `--force` to reprocess everything.
+
+---
+
+## Reproducing the Multilingual Hantavirus Benchmark
+
+The benchmark corpus ships under `eval/sources/hantavirus/`:
+
+| File | Language | Pages |
+|------|----------|------:|
+| `Hantavirus.pdf` | English | 15 |
+| `Hantaviren.pdf` | German | 22 |
+| `Hantavirus_fr.pdf` | French | 7 |
+
+The three PDFs are independent Wikipedia treatments of *Orthohantavirus* (CC BY-SA); they are not translations of one another. To reproduce the published results:
+
+```bash
+python evaluate_pipeline.py \
+    --input-dir eval/sources/hantavirus/ \
+    --tbox      ontology/echo-core.ttl \
+    --out       eval/runs/hantavirus \
+    --model     qwen3:30b-a3b-q4_K_M
+```
+
+Expected wall-clock time: 30–55 minutes per article on a workstation with ≥ 24 GB GPU VRAM.  
+The similarity threshold τ = 0.78 is the library default in `compare_semantics.py`.
+
+---
+
+## Results
+
+Results on the multilingual *Hantavirus* corpus (threshold τ = 0.78, Qwen3 30B-A3B Q4\_K\_M):
+
+| Article | Lang | Pages | Facts orig. | Facts rec. | Missing | Halluc. | Recall | Prec. | Halluc. rate |
+|---------|------|------:|------------:|-----------:|--------:|--------:|-------:|------:|-------------:|
+| *Hantavirus* | en | 15 | 661 | 650 | 15 | 4 | **0.977** | 0.994 | **0.006** |
+| *Hantaviren* | de | 22 | 736 | 745 | 50 | 72 | 0.932 | 0.903 | 0.097 |
+| *Hantavirus* | fr | 7 | 173 | 187 | 10 | 9 | 0.942 | 0.952 | 0.048 |
+| **Macro-avg** | | | | | | | **0.951** | **0.950** | **0.050** |
+
+The dominant failure mode is **cross-lingual paraphrasing, not fabrication**: when the source is German, the downlift sometimes restates facts in English, causing the embedding-based matcher to fall below τ. The extracted graph is not wrong; the round-trip evaluation penalises the surface-form mismatch. See the paper for a detailed qualitative analysis and proposed mitigations.
+
+---
+
+## T-Box (Core Ontology)
+
+All experiments use the generic core T-Box at `ontology/echo-core.ttl`, which contains **69 classes** and **83 properties** (55 object properties, 28 datatype properties). Top-level abstractions include `Document`, `Section`, `Person`, `Organization`, `TimePoint`, `Finding`, `Claim`, `Evidence`, and `ExtractedFact`, covering any document type without committing to a specific domain.
+
+Concept proposals raised by the LLM during extraction are recorded as `echog:OntologyAdditionProposal` and indicate genuine vocabulary gaps with respect to this deliberately under-specified T-Box.
+
+---
+
+## Repository Structure
+
+```
+Echo-G-Community-Edition/
+├── echo_g_core.py            # Core library (reified extraction, TBox loading, provenance)
+├── pdf_to_markdown.py        # Stage 1: PDF → Markdown
+├── pdf_to_ontology.py        # Stage 2: Markdown → RDF/Turtle  (chunked uplift)
+├── ontology_to_markdown.py   # Stage 3: RDF/Turtle → Markdown′ (downlift)
+├── compare_semantics.py      # Stage 4: atomic-fact extraction + fuzzy matching
+├── evaluate_pipeline.py      # End-to-end evaluation harness
+├── pyproject.toml            # Python package metadata and dependencies
+├── ontology/
+│   └── echo-core.ttl         # Generic core T-Box (69 classes, 83 properties)
+└── eval/
+    └── sources/
+        └── hantavirus/
+            ├── Hantavirus.pdf     # English Wikipedia article (CC BY-SA)
+            ├── Hantaviren.pdf     # German Wikipedia article  (CC BY-SA)
+            └── Hantavirus_fr.pdf  # French Wikipedia article  (CC BY-SA)
+```
 
 ---
 
 ## Citation
 
-If you use Echo-G in scientific work, please cite:
+If you use ECHO-G in your research, please cite:
 
 ```bibtex
-@software{ponciano2026echog,
-  author = {Ponciano, Jean-Jacques},
-  title = {Echo-G: Evidence-Centered Ontology Construction and Knowledge-Grounded AI Workbench},
-  year = {2026},
-  url = {https://github.com/JJponciano/Echo-G}
+@inproceedings{ponciano2026echog,
+  author    = {Ponciano, Claire and Schaffert, Markus and Ponciano, Jean-Jacques},
+  title     = {{ECHO-G: Evidence-Centered Hybrid Ontologization with Semantic
+                Idempotence Evaluation using Local Mixture-of-Experts Language Models}},
+  booktitle = {Proceedings of the 18th International Conference on Knowledge
+               Engineering and Ontology Development (KEOD)},
+  year      = {2026},
+  publisher = {SciTePress},
+  note      = {To appear}
 }
+```
+
+This work builds on:
+
+```bibtex
+@inproceedings{ponciano2025ontogrounded,
+  author    = {Ponciano, Claire and Schaffert, Markus and Ponciano, Jean-Jacques},
+  title     = {{Ontology-Grounded Language Modeling: Enhancing GPT-Based
+                Philosophical Text Generation with Structured Knowledge}},
+  booktitle = {Proceedings of the 21st International Conference on Web
+               Information Systems and Technologies (WEBIST)},
+  pages     = {459--467},
+  year      = {2025},
+  publisher = {SciTePress},
+  doi       = {10.5220/0013864400003985}
+}
+
+@inproceedings{ponciano2024odkar,
+  author    = {Ponciano, Claire and Schaffert, Markus and Ponciano, Jean-Jacques},
+  title     = {{ODKAR: Ontology-Based Dynamic Knowledge Acquisition and
+                Automated Reasoning Using NLP, OWL, and SWRL}},
+  booktitle = {Proceedings of the 20th International Conference on Web
+               Information Systems and Technologies (WEBIST)},
+  pages     = {457--465},
+  year      = {2024},
+  publisher = {SciTePress},
+  doi       = {10.5220/0013071500003825}
+}
+```
+
+---
+
+## License
+
+Released under the **Echo-G Community Research License (EGRL) v1.0** — see [LICENSE](LICENSE).  
+Free for academic research, education, and scientific publications.  
+Commercial use requires prior written permission.
+
+The Hantavirus benchmark PDFs are sourced from Wikipedia under the **CC BY-SA** licence.

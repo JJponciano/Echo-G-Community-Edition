@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Evaluation outputs (run artefacts, not source)
+eval/runs/
+eval/markdown/
+
+# Content store (intermediate extraction cache)
+content_store/
+outputs/
+
+# Editor
+.vscode/
+.idea/
+*.swp

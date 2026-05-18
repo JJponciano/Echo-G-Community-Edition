@@ -1,0 +1,1150 @@
+# =============================================================================
+#  ECHO-G Core Ontology  (echo-core)
+# =============================================================================
+#  Version : 0.1.0
+#  Date    : 2026-05-07
+#  Author  : Jean-Jacques Ponciano
+#  License : CC BY 4.0
+#  Repo    : https://github.com/JJponciano/Echo-G
+#
+#  ----------------------------------------------------------------------------
+#  PURPOSE
+#  ----------------------------------------------------------------------------
+#  A generic, domain-neutral core ontology for ECHO-G. It models *how* knowledge
+#  is represented (documents, evidence, entities, claims, provenance,
+#  uncertainty), not *what* the knowledge is about. Domain TBoxes (clinical,
+#  legal, dental, financial, engineering, ...) extend this core via separate
+#  files.
+#
+#  Every extracted statement should be reconstructible as:
+#      Document -> Section/TextSpan -> Evidence -> Entity -> Attribute/Value
+#                                                -> Relation -> Claim
+#                                                -> ExtractionRun -> Provenance
+#
+#  ----------------------------------------------------------------------------
+#  PROFILE
+#  ----------------------------------------------------------------------------
+#  OWL 2 RL. Lightweight alignment with PROV-O, SOSA, SKOS, DCTERMS.
+#  No complex existential restrictions; constraints will live in SHACL shapes
+#  (echo-core-shapes.ttl, future).
+# =============================================================================
+
+
+@prefix echo:    <https://jjponciano.github.io/Echo-G/ontology/core#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix sosa:    <http://www.w3.org/ns/sosa/> .
+@prefix time:    <http://www.w3.org/2006/time#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix cc:      <http://creativecommons.org/ns#> .
+@prefix foaf:    <http://xmlns.com/foaf/0.1/> .
+@prefix qudt:    <http://qudt.org/schema/qudt/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+
+# =============================================================================
+#  1.  Ontology declaration
+# =============================================================================
+
+<https://jjponciano.github.io/Echo-G/ontology/core>
+    a                              owl:Ontology ;
+    dcterms:title                  "ECHO-G Core Ontology"@en ;
+    dcterms:description            """Generic core ontology for ECHO-G. Domain-neutral.
+        Describes how knowledge is represented (documents, evidence, entities,
+        claims, provenance, uncertainty), not what the knowledge is about."""@en ;
+    dcterms:creator                "Jean-Jacques Ponciano" ;
+    dcterms:issued                 "2026-05-07"^^xsd:date ;
+    dcterms:license                <https://creativecommons.org/licenses/by/4.0/> ;
+    cc:license                     <https://creativecommons.org/licenses/by/4.0/> ;
+    vann:preferredNamespacePrefix  "echo" ;
+    vann:preferredNamespaceUri     "https://jjponciano.github.io/Echo-G/ontology/core#" ;
+    owl:versionInfo                "0.1.0" ;
+    owl:versionIRI                 <https://jjponciano.github.io/Echo-G/ontology/core/0.1.0> ;
+    rdfs:seeAlso                   <https://github.com/JJponciano/Echo-G> ;
+    rdfs:comment                   "OWL 2 RL profile."@en .
+
+
+# =============================================================================
+#  2.  Top-level abstract class
+# =============================================================================
+
+echo:Resource
+    a               owl:Class ;
+    rdfs:label      "Resource"@en ;
+    rdfs:comment    "Abstract root for all ECHO-G entities. Convenience class; not required for use."@en .
+
+
+# =============================================================================
+#  3.  Document structure  (Requirements §3)
+# =============================================================================
+
+echo:Document
+    a               owl:Class ;
+    rdfs:label      "Document"@en ;
+    rdfs:comment    "Any source document: scientific paper, report, professional record, contract, dataset description, etc."@en ;
+    rdfs:subClassOf echo:Resource , prov:Entity .
+
+echo:DocumentSection
+    a               owl:Class ;
+    rdfs:label      "Document Section"@en ;
+    rdfs:comment    "A structural part of a document (chapter, section, subsection, appendix)."@en ;
+    rdfs:subClassOf echo:Resource , prov:Entity .
+
+echo:TextSpan
+    a               owl:Class ;
+    rdfs:label      "Text Span"@en ;
+    rdfs:comment    "A contiguous span of characters inside a document. Used to anchor evidence."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Table
+    a               owl:Class ;
+    rdfs:label      "Table"@en ;
+    rdfs:comment    "A tabular block of structured cells inside a document."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Figure
+    a               owl:Class ;
+    rdfs:label      "Figure"@en ;
+    rdfs:comment    "A figure, image, or diagram inside a document."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Reference
+    a               owl:Class ;
+    rdfs:label      "Reference"@en ;
+    rdfs:comment    "A bibliographic or external reference cited from a document."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Appendix
+    a               owl:Class ;
+    rdfs:label      "Appendix"@en ;
+    rdfs:subClassOf echo:DocumentSection .
+
+
+# =============================================================================
+#  4.  Source identification
+# =============================================================================
+
+echo:Source
+    a               owl:Class ;
+    rdfs:label      "Source"@en ;
+    rdfs:comment    "The origin from which a document or fact was obtained (file, URL, API, oral statement, ...)."@en ;
+    rdfs:subClassOf echo:Resource .
+
+
+# =============================================================================
+#  5.  Agents and roles  (Requirements §2, §6)
+# =============================================================================
+
+echo:Agent
+    a               owl:Class ;
+    rdfs:label      "Agent"@en ;
+    rdfs:comment    "Anyone or anything (human, organisation, software) that can act, decide, or be responsible for an action."@en ;
+    rdfs:subClassOf echo:Resource , prov:Agent .
+
+echo:Person
+    a               owl:Class ;
+    rdfs:label      "Person"@en ;
+    rdfs:subClassOf echo:Agent ;
+    rdfs:seeAlso    foaf:Person .
+
+echo:Organization
+    a               owl:Class ;
+    rdfs:label      "Organization"@en ;
+    rdfs:subClassOf echo:Agent ;
+    rdfs:seeAlso    foaf:Organization .
+
+echo:Role
+    a               owl:Class ;
+    rdfs:label      "Role"@en ;
+    rdfs:comment    "A role played by an agent in a context (e.g. author, reviewer, clinician, plaintiff)."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Actor
+    a               owl:Class ;
+    rdfs:label      "Actor"@en ;
+    rdfs:comment    "An agent acting in a specific role within an action, encounter, or process."@en ;
+    rdfs:subClassOf echo:Role .
+
+echo:Recipient
+    a               owl:Class ;
+    rdfs:label      "Recipient"@en ;
+    rdfs:comment    "An agent receiving an action, message, recommendation, or outcome."@en ;
+    rdfs:subClassOf echo:Role .
+
+
+# =============================================================================
+#  6.  Entities, events, actions  (Requirements §4, §6)
+# =============================================================================
+
+echo:Entity
+    a               owl:Class ;
+    rdfs:label      "Entity"@en ;
+    rdfs:comment    "A generic thing referred to by a document. Domain TBoxes specialise this (e.g. Patient, Device, Asset)."@en ;
+    rdfs:subClassOf echo:Resource , prov:Entity .
+
+echo:Event
+    a               owl:Class ;
+    rdfs:label      "Event"@en ;
+    rdfs:comment    "Something that happened at a time or interval."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Process
+    a               owl:Class ;
+    rdfs:label      "Process"@en ;
+    rdfs:comment    "An ongoing or extended event composed of steps."@en ;
+    rdfs:subClassOf echo:Event .
+
+echo:Action
+    a               owl:Class ;
+    rdfs:label      "Action"@en ;
+    rdfs:comment    "An event performed by an agent."@en ;
+    rdfs:subClassOf echo:Event , prov:Activity .
+
+echo:Task
+    a               owl:Class ;
+    rdfs:label      "Task"@en ;
+    rdfs:comment    "A planned unit of work assigned to an agent."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Plan
+    a               owl:Class ;
+    rdfs:label      "Plan"@en ;
+    rdfs:comment    "An intended sequence of actions or tasks."@en ;
+    rdfs:subClassOf echo:Resource .
+
+
+# =============================================================================
+#  7.  Cases and records  (Requirements §6)
+# =============================================================================
+
+echo:Project
+    a               owl:Class ;
+    rdfs:label      "Project"@en ;
+    rdfs:comment    "A coordinated effort grouping records, documents, and outcomes."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Case
+    a               owl:Class ;
+    rdfs:label      "Case"@en ;
+    rdfs:comment    "A unit of work concerning a specific subject (a patient case, a legal case, an engineering case, ...)."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Encounter
+    a               owl:Class ;
+    rdfs:label      "Encounter"@en ;
+    rdfs:comment    "A bounded interaction between agents (consultation, meeting, hearing, inspection)."@en ;
+    rdfs:subClassOf echo:Event .
+
+echo:Record
+    a               owl:Class ;
+    rdfs:label      "Record"@en ;
+    rdfs:comment    "A persistent file of facts about a case or subject."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:RecordEntry
+    a               owl:Class ;
+    rdfs:label      "Record Entry"@en ;
+    rdfs:comment    "An individual dated entry inside a record."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Dataset
+    a               owl:Class ;
+    rdfs:label      "Dataset"@en ;
+    rdfs:comment    "A structured collection of data (table, file, database export)."@en ;
+    rdfs:subClassOf echo:Resource , prov:Entity .
+
+
+# =============================================================================
+#  8.  Observations, measurements, samples  (Requirements §5, §6)
+# =============================================================================
+
+echo:Observation
+    a               owl:Class ;
+    rdfs:label      "Observation"@en ;
+    rdfs:comment    "Generic act of observing or asserting a property of something. Domain-neutral. Aligned with sosa:Observation."@en ;
+    rdfs:subClassOf echo:Event ;
+    rdfs:subClassOf sosa:Observation .
+
+echo:Measurement
+    a               owl:Class ;
+    rdfs:label      "Measurement"@en ;
+    rdfs:comment    "An observation that yields a quantitative value with a unit."@en ;
+    rdfs:subClassOf echo:Observation .
+
+echo:Assessment
+    a               owl:Class ;
+    rdfs:label      "Assessment"@en ;
+    rdfs:comment    "A qualitative observation or judgement (clinical, legal, technical)."@en ;
+    rdfs:subClassOf echo:Observation .
+
+echo:Sample
+    a               owl:Class ;
+    rdfs:label      "Sample"@en ;
+    rdfs:comment    "Material or data taken from something for examination."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Variable
+    a               owl:Class ;
+    rdfs:label      "Variable"@en ;
+    rdfs:comment    "A property that can take different values (height, age, status). Aligned with sosa:ObservableProperty."@en ;
+    rdfs:subClassOf echo:Resource .
+
+
+# =============================================================================
+#  9.  Quantities and units  (Requirements §9)
+# =============================================================================
+
+echo:Value
+    a               owl:Class ;
+    rdfs:label      "Value"@en ;
+    rdfs:comment    "Generic value of a property. Subclassed by Quantity, NumericValue, CategoricalValue."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Quantity
+    a               owl:Class ;
+    rdfs:label      "Quantity"@en ;
+    rdfs:comment    "A numeric value paired with a unit."@en ;
+    rdfs:subClassOf echo:Value ;
+    rdfs:seeAlso    qudt:Quantity .
+
+echo:NumericValue
+    a               owl:Class ;
+    rdfs:label      "Numeric Value"@en ;
+    rdfs:subClassOf echo:Value .
+
+echo:CategoricalValue
+    a               owl:Class ;
+    rdfs:label      "Categorical Value"@en ;
+    rdfs:subClassOf echo:Value .
+
+echo:Unit
+    a               owl:Class ;
+    rdfs:label      "Unit"@en ;
+    rdfs:comment    "Unit of measure. Use QUDT or OM individuals when possible."@en ;
+    rdfs:subClassOf echo:Resource ;
+    rdfs:seeAlso    qudt:Unit .
+
+echo:ReferenceRange
+    a               owl:Class ;
+    rdfs:label      "Reference Range"@en ;
+    rdfs:comment    "Expected interval for a value (e.g. clinical reference range)."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Threshold
+    a               owl:Class ;
+    rdfs:label      "Threshold"@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Duration
+    a               owl:Class ;
+    rdfs:label      "Duration"@en ;
+    rdfs:comment    "Length of time. Aligned with time:Duration."@en ;
+    rdfs:subClassOf echo:Quantity ;
+    rdfs:seeAlso    time:Duration .
+
+echo:Frequency
+    a               owl:Class ;
+    rdfs:label      "Frequency"@en ;
+    rdfs:comment    "Number of occurrences per unit time."@en ;
+    rdfs:subClassOf echo:Quantity .
+
+
+# =============================================================================
+#  10. Methods, protocols, instruments  (Requirements §5)
+# =============================================================================
+
+echo:Method
+    a               owl:Class ;
+    rdfs:label      "Method"@en ;
+    rdfs:comment    "A general approach used to perform an action or produce a result."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Protocol
+    a               owl:Class ;
+    rdfs:label      "Protocol"@en ;
+    rdfs:comment    "A specific, written procedure (clinical protocol, experimental protocol, SOP)."@en ;
+    rdfs:subClassOf echo:Method .
+
+echo:Instrument
+    a               owl:Class ;
+    rdfs:label      "Instrument"@en ;
+    rdfs:comment    "A device or tool used to perform observations or actions."@en ;
+    rdfs:subClassOf echo:Resource .
+
+
+# =============================================================================
+#  11. Claims, findings, decisions, outcomes  (Requirements §4, §6)
+# =============================================================================
+
+echo:Claim
+    a               owl:Class ;
+    rdfs:label      "Claim"@en ;
+    rdfs:comment    "A propositional assertion that may be supported or contradicted by evidence."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Finding
+    a               owl:Class ;
+    rdfs:label      "Finding"@en ;
+    rdfs:comment    "A claim derived from observations (clinical finding, audit finding, research finding)."@en ;
+    rdfs:subClassOf echo:Claim .
+
+echo:Decision
+    a               owl:Class ;
+    rdfs:label      "Decision"@en ;
+    rdfs:comment    "A choice made by an agent."@en ;
+    rdfs:subClassOf echo:Action .
+
+echo:Recommendation
+    a               owl:Class ;
+    rdfs:label      "Recommendation"@en ;
+    rdfs:subClassOf echo:Claim .
+
+echo:Outcome
+    a               owl:Class ;
+    rdfs:label      "Outcome"@en ;
+    rdfs:comment    "A resulting state of affairs after an action, plan, or process."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Risk
+    a               owl:Class ;
+    rdfs:label      "Risk"@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Consent
+    a               owl:Class ;
+    rdfs:label      "Consent"@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Status
+    a               owl:Class ;
+    rdfs:label      "Status"@en ;
+    rdfs:comment    "A state label of an entity, task, claim, or workflow item."@en ;
+    rdfs:subClassOf skos:Concept .
+
+
+# =============================================================================
+#  12. Evidence  (Requirements §3, §4, §7)
+# =============================================================================
+
+echo:Evidence
+    a               owl:Class ;
+    rdfs:label      "Evidence"@en ;
+    rdfs:comment    "Anything that supports or contradicts a claim. Most often a TextSpan, but may be a Table cell, a Figure, a Measurement, or another Document."@en ;
+    rdfs:subClassOf echo:Resource , prov:Entity .
+
+
+# =============================================================================
+#  13. Annotation, classification, extraction  (Requirements §2, §7, §11)
+# =============================================================================
+
+echo:Annotation
+    a               owl:Class ;
+    rdfs:label      "Annotation"@en ;
+    rdfs:comment    "A piece of metadata attached to a document, span, or entity."@en ;
+    rdfs:subClassOf echo:Resource .
+
+echo:Classification
+    a               owl:Class ;
+    rdfs:label      "Classification"@en ;
+    rdfs:comment    "Assignment of an entity to a category (controlled vocabulary, taxonomy, ICD code, MeSH term, ...)."@en ;
+    rdfs:subClassOf echo:Annotation , skos:Concept .
+
+echo:ExtractedFact
+    a               owl:Class ;
+    rdfs:label      "Extracted Fact"@en ;
+    rdfs:comment    "A structured fact produced by an extraction pipeline. MUST point to evidence and to its ExtractionRun."@en ;
+    rdfs:subClassOf echo:Resource , prov:Entity .
+
+
+# =============================================================================
+#  14. Provenance and audit trail  (Requirements §7)
+# =============================================================================
+
+echo:ExtractionRun
+    a               owl:Class ;
+    rdfs:label      "Extraction Run"@en ;
+    rdfs:comment    "A single execution of an extraction pipeline that produced one or more ExtractedFact instances."@en ;
+    rdfs:subClassOf prov:Activity .
+
+echo:ExtractionModel
+    a               owl:Class ;
+    rdfs:label      "Extraction Model"@en ;
+    rdfs:comment    "An LLM, parser, or rule engine used during an ExtractionRun."@en ;
+    rdfs:subClassOf prov:SoftwareAgent .
+
+echo:ParserVersion
+    a               owl:Class ;
+    rdfs:label      "Parser Version"@en ;
+    rdfs:subClassOf prov:SoftwareAgent .
+
+echo:Prompt
+    a               owl:Class ;
+    rdfs:label      "Prompt"@en ;
+    rdfs:comment    "A prompt or template used by an LLM-based ExtractionModel."@en ;
+    rdfs:subClassOf prov:Plan .
+
+echo:HumanReviewer
+    a               owl:Class ;
+    rdfs:label      "Human Reviewer"@en ;
+    rdfs:subClassOf echo:Person .
+
+echo:ReviewDecision
+    a               owl:Class ;
+    rdfs:label      "Review Decision"@en ;
+    rdfs:subClassOf echo:Decision .
+
+echo:ConfidenceScore
+    a               owl:Class ;
+    rdfs:label      "Confidence Score"@en ;
+    rdfs:subClassOf echo:Annotation .
+
+echo:ValidationStatus
+    a               owl:Class ;
+    rdfs:label      "Validation Status"@en ;
+    rdfs:subClassOf echo:Status .
+
+
+# =============================================================================
+#  15. Uncertainty  (Requirements §8)
+# =============================================================================
+
+echo:Uncertainty
+    a               owl:Class ;
+    rdfs:label      "Uncertainty"@en ;
+    rdfs:comment    "Expression of doubt, error margin, or confidence about a value or claim."@en ;
+    rdfs:subClassOf echo:Resource .
+
+
+# =============================================================================
+#  16. Time  (Requirements §10)
+# =============================================================================
+
+echo:Instant
+    a               owl:Class ;
+    rdfs:label      "Instant"@en ;
+    rdfs:subClassOf time:Instant .
+
+echo:TimePoint
+    a               owl:Class ;
+    rdfs:label      "Time Point"@en ;
+    rdfs:comment    "A specific point in time. Convenience alias of echo:Instant."@en ;
+    owl:equivalentClass echo:Instant .
+
+echo:Interval
+    a               owl:Class ;
+    rdfs:label      "Interval"@en ;
+    rdfs:subClassOf time:Interval .
+
+echo:Deadline
+    a               owl:Class ;
+    rdfs:label      "Deadline"@en ;
+    rdfs:comment    "A point in time by which a task, decision, or obligation must be completed."@en ;
+    rdfs:subClassOf echo:Instant .
+
+
+# =============================================================================
+#  17. SKOS-style controlled vocabularies for status / certainty / polarity
+# =============================================================================
+#  Domain TBoxes may extend these schemes. Listed values are the minimum
+#  required by Requirements §8.
+
+echo:CertaintyScheme        a skos:ConceptScheme ; rdfs:label "Certainty"@en .
+echo:certain                a skos:Concept ; skos:inScheme echo:CertaintyScheme ; skos:prefLabel "certain"@en .
+echo:probable               a skos:Concept ; skos:inScheme echo:CertaintyScheme ; skos:prefLabel "probable"@en .
+echo:possible               a skos:Concept ; skos:inScheme echo:CertaintyScheme ; skos:prefLabel "possible"@en .
+echo:unverified             a skos:Concept ; skos:inScheme echo:CertaintyScheme ; skos:prefLabel "unverified"@en .
+echo:humanConfirmed         a skos:Concept ; skos:inScheme echo:CertaintyScheme ; skos:prefLabel "human-confirmed"@en .
+
+echo:PolarityScheme         a skos:ConceptScheme ; rdfs:label "Polarity"@en .
+echo:polarityAffirmed       a skos:Concept ; skos:inScheme echo:PolarityScheme ; skos:prefLabel "affirmed"@en .
+echo:polarityNegated        a skos:Concept ; skos:inScheme echo:PolarityScheme ; skos:prefLabel "negated"@en .
+
+echo:FactStatusScheme       a skos:ConceptScheme ; rdfs:label "Fact Status"@en .
+echo:statusCurrent          a skos:Concept ; skos:inScheme echo:FactStatusScheme ; skos:prefLabel "current"@en .
+echo:statusObsolete         a skos:Concept ; skos:inScheme echo:FactStatusScheme ; skos:prefLabel "obsolete"@en .
+echo:statusConflicting      a skos:Concept ; skos:inScheme echo:FactStatusScheme ; skos:prefLabel "conflicting"@en .
+
+echo:ValidationStatusScheme a skos:ConceptScheme ; rdfs:label "Validation Status"@en .
+echo:validationPending      a skos:Concept ; skos:inScheme echo:ValidationStatusScheme ; skos:prefLabel "pending"@en .
+echo:validationApproved     a skos:Concept ; skos:inScheme echo:ValidationStatusScheme ; skos:prefLabel "approved"@en .
+echo:validationRejected     a skos:Concept ; skos:inScheme echo:ValidationStatusScheme ; skos:prefLabel "rejected"@en .
+
+
+# =============================================================================
+#  18. Object Properties
+# =============================================================================
+
+# ----- 18.1 Document structure ---------------------------------------------
+
+echo:hasSection
+    a               owl:ObjectProperty ;
+    rdfs:label      "has section"@en ;
+    rdfs:domain     echo:Document ;
+    rdfs:range      echo:DocumentSection .
+
+echo:hasSubsection
+    a               owl:ObjectProperty ;
+    rdfs:label      "has subsection"@en ;
+    rdfs:domain     echo:DocumentSection ;
+    rdfs:range      echo:DocumentSection .
+
+echo:hasTable
+    a               owl:ObjectProperty ;
+    rdfs:label      "has table"@en ;
+    rdfs:range      echo:Table .
+
+echo:hasFigure
+    a               owl:ObjectProperty ;
+    rdfs:label      "has figure"@en ;
+    rdfs:range      echo:Figure .
+
+echo:hasReference
+    a               owl:ObjectProperty ;
+    rdfs:label      "has reference"@en ;
+    rdfs:range      echo:Reference .
+
+echo:hasAppendix
+    a               owl:ObjectProperty ;
+    rdfs:label      "has appendix"@en ;
+    rdfs:domain     echo:Document ;
+    rdfs:range      echo:Appendix .
+
+echo:hasCaption
+    a               owl:ObjectProperty ;
+    rdfs:label      "has caption"@en ;
+    rdfs:range      echo:TextSpan .
+
+echo:hasSource
+    a               owl:ObjectProperty ;
+    rdfs:label      "has source"@en ;
+    rdfs:range      echo:Source .
+
+
+# ----- 18.2 Evidence linking -----------------------------------------------
+
+echo:hasEvidence
+    a               owl:ObjectProperty ;
+    rdfs:label      "has evidence"@en ;
+    rdfs:comment    "Links any extracted fact, claim, or annotation to its supporting evidence."@en ;
+    rdfs:range      echo:Evidence ;
+    rdfs:subPropertyOf prov:wasDerivedFrom .
+
+echo:about
+    a               owl:ObjectProperty ;
+    rdfs:label      "about"@en ;
+    rdfs:comment    "Subject of an evidence span, annotation, or document section."@en .
+
+echo:mentions
+    a               owl:ObjectProperty ;
+    rdfs:label      "mentions"@en ;
+    rdfs:comment    "An entity is mentioned within a document, section, or span."@en .
+
+echo:sourceSection
+    a               owl:ObjectProperty ;
+    rdfs:label      "source section"@en ;
+    rdfs:domain     echo:Evidence ;
+    rdfs:range      echo:DocumentSection .
+
+echo:sourceDocument
+    a               owl:ObjectProperty ;
+    rdfs:label      "source document"@en ;
+    rdfs:domain     echo:Evidence ;
+    rdfs:range      echo:Document .
+
+
+# ----- 18.3 Entity / attribute / relation core -----------------------------
+
+echo:hasEntity
+    a               owl:ObjectProperty ;
+    rdfs:label      "has entity"@en .
+
+echo:hasAttribute
+    a               owl:ObjectProperty ;
+    rdfs:label      "has attribute"@en ;
+    rdfs:range      echo:Variable .
+
+echo:hasValue
+    a               owl:ObjectProperty ;
+    rdfs:label      "has value"@en ;
+    rdfs:range      echo:Value .
+
+echo:hasUnit
+    a               owl:ObjectProperty ;
+    rdfs:label      "has unit"@en ;
+    rdfs:domain     echo:Quantity ;
+    rdfs:range      echo:Unit .
+
+echo:hasRelation
+    a               owl:ObjectProperty ;
+    rdfs:label      "has relation"@en ;
+    rdfs:comment    "Generic reified relation slot. Use only when domain TBox does not provide a more specific predicate."@en .
+
+echo:hasSubject
+    a               owl:ObjectProperty ;
+    rdfs:label      "has subject"@en .
+
+echo:hasObject
+    a               owl:ObjectProperty ;
+    rdfs:label      "has object"@en .
+
+echo:hasParticipant
+    a               owl:ObjectProperty ;
+    rdfs:label      "has participant"@en ;
+    rdfs:domain     echo:Event ;
+    rdfs:range      echo:Agent .
+
+echo:hasRole
+    a               owl:ObjectProperty ;
+    rdfs:label      "has role"@en ;
+    rdfs:range      echo:Role .
+
+echo:classifiesAs
+    a               owl:ObjectProperty ;
+    rdfs:label      "classifies as"@en ;
+    rdfs:range      echo:Classification .
+
+
+# ----- 18.4 Methods and instruments ----------------------------------------
+
+echo:usesMethod
+    a               owl:ObjectProperty ;
+    rdfs:label      "uses method"@en ;
+    rdfs:range      echo:Method .
+
+echo:usesInstrument
+    a               owl:ObjectProperty ;
+    rdfs:label      "uses instrument"@en ;
+    rdfs:range      echo:Instrument .
+
+echo:hasSample
+    a               owl:ObjectProperty ;
+    rdfs:label      "has sample"@en ;
+    rdfs:range      echo:Sample .
+
+echo:hasVariable
+    a               owl:ObjectProperty ;
+    rdfs:label      "has variable"@en ;
+    rdfs:range      echo:Variable .
+
+echo:measures
+    a               owl:ObjectProperty ;
+    rdfs:label      "measures"@en ;
+    rdfs:domain     echo:Measurement .
+
+echo:hasResult
+    a               owl:ObjectProperty ;
+    rdfs:label      "has result"@en .
+
+
+# ----- 18.5 Claims and evidence relations ----------------------------------
+
+echo:supportsClaim
+    a               owl:ObjectProperty ;
+    rdfs:label      "supports claim"@en ;
+    rdfs:range      echo:Claim ;
+    owl:inverseOf   echo:supportedBy .
+
+echo:supportedBy
+    a               owl:ObjectProperty ;
+    rdfs:label      "supported by"@en ;
+    rdfs:domain     echo:Claim .
+
+echo:contradictsClaim
+    a               owl:ObjectProperty ;
+    rdfs:label      "contradicts claim"@en ;
+    rdfs:range      echo:Claim .
+
+
+# ----- 18.6 Records, cases, plans  -----------------------------------------
+
+echo:concerns
+    a               owl:ObjectProperty ;
+    rdfs:label      "concerns"@en ;
+    rdfs:comment    "What a record entry, case, or document is about."@en .
+
+echo:performedBy
+    a               owl:ObjectProperty ;
+    rdfs:label      "performed by"@en ;
+    rdfs:range      echo:Agent ;
+    rdfs:subPropertyOf prov:wasAssociatedWith .
+
+echo:assignedTo
+    a               owl:ObjectProperty ;
+    rdfs:label      "assigned to"@en ;
+    rdfs:domain     echo:Task ;
+    rdfs:range      echo:Agent .
+
+echo:decidedBy
+    a               owl:ObjectProperty ;
+    rdfs:label      "decided by"@en ;
+    rdfs:domain     echo:Decision ;
+    rdfs:range      echo:Agent .
+
+echo:recommendedBy
+    a               owl:ObjectProperty ;
+    rdfs:label      "recommended by"@en ;
+    rdfs:domain     echo:Recommendation ;
+    rdfs:range      echo:Agent .
+
+echo:scheduledFor
+    a               owl:ObjectProperty ;
+    rdfs:label      "scheduled for"@en .
+
+echo:hasStatus
+    a               owl:ObjectProperty ;
+    rdfs:label      "has status"@en ;
+    rdfs:range      echo:Status .
+
+echo:hasReason
+    a               owl:ObjectProperty ;
+    rdfs:label      "has reason"@en .
+
+echo:hasRisk
+    a               owl:ObjectProperty ;
+    rdfs:label      "has risk"@en ;
+    rdfs:range      echo:Risk .
+
+echo:hasOutcome
+    a               owl:ObjectProperty ;
+    rdfs:label      "has outcome"@en ;
+    rdfs:range      echo:Outcome .
+
+
+# ----- 18.7 Provenance ------------------------------------------------------
+
+echo:extractedBy
+    a               owl:ObjectProperty ;
+    rdfs:label      "extracted by"@en ;
+    rdfs:domain     echo:ExtractedFact ;
+    rdfs:range      echo:ExtractionRun ;
+    rdfs:subPropertyOf prov:wasGeneratedBy .
+
+echo:usedModel
+    a               owl:ObjectProperty ;
+    rdfs:label      "used model"@en ;
+    rdfs:domain     echo:ExtractionRun ;
+    rdfs:range      echo:ExtractionModel ;
+    rdfs:subPropertyOf prov:used .
+
+echo:usedPrompt
+    a               owl:ObjectProperty ;
+    rdfs:label      "used prompt"@en ;
+    rdfs:domain     echo:ExtractionRun ;
+    rdfs:range      echo:Prompt ;
+    rdfs:subPropertyOf prov:used .
+
+echo:reviewedBy
+    a               owl:ObjectProperty ;
+    rdfs:label      "reviewed by"@en ;
+    rdfs:range      echo:HumanReviewer .
+
+echo:hasValidationStatus
+    a               owl:ObjectProperty ;
+    rdfs:label      "has validation status"@en ;
+    rdfs:range      echo:ValidationStatus .
+
+echo:generatedBy
+    a               owl:ObjectProperty ;
+    rdfs:label      "generated by"@en ;
+    rdfs:subPropertyOf prov:wasGeneratedBy .
+
+echo:wasDerivedFrom
+    a               owl:ObjectProperty ;
+    rdfs:label      "was derived from"@en ;
+    rdfs:subPropertyOf prov:wasDerivedFrom .
+
+
+# ----- 18.8 Uncertainty -----------------------------------------------------
+
+echo:hasUncertainty
+    a               owl:ObjectProperty ;
+    rdfs:label      "has uncertainty"@en ;
+    rdfs:range      echo:Uncertainty .
+
+echo:hasConfidence
+    a               owl:ObjectProperty ;
+    rdfs:label      "has confidence"@en ;
+    rdfs:range      echo:ConfidenceScore .
+
+echo:hasCertainty
+    a               owl:ObjectProperty ;
+    rdfs:label      "has certainty"@en ;
+    rdfs:range      skos:Concept ;
+    rdfs:comment    "Points to a concept in echo:CertaintyScheme."@en .
+
+echo:hasPolarity
+    a               owl:ObjectProperty ;
+    rdfs:label      "has polarity"@en ;
+    rdfs:range      skos:Concept ;
+    rdfs:comment    "Points to a concept in echo:PolarityScheme."@en .
+
+echo:hasFactStatus
+    a               owl:ObjectProperty ;
+    rdfs:label      "has fact status"@en ;
+    rdfs:range      skos:Concept ;
+    rdfs:comment    "Points to a concept in echo:FactStatusScheme."@en .
+
+
+# ----- 18.9 Time ------------------------------------------------------------
+
+echo:hasTime
+    a               owl:ObjectProperty ;
+    rdfs:label      "has time"@en ;
+    rdfs:range      time:TemporalEntity .
+
+
+# =============================================================================
+#  19. Datatype Properties
+# =============================================================================
+
+# ----- 19.1 Document-level metadata ----------------------------------------
+
+echo:hasTitle
+    a               owl:DatatypeProperty ;
+    rdfs:label      "has title"@en ;
+    rdfs:range      xsd:string .
+
+echo:hasHeading
+    a               owl:DatatypeProperty ;
+    rdfs:label      "has heading"@en ;
+    rdfs:domain     echo:DocumentSection ;
+    rdfs:range      xsd:string .
+
+echo:hasText
+    a               owl:DatatypeProperty ;
+    rdfs:label      "has text"@en ;
+    rdfs:range      xsd:string .
+
+echo:hasPageNumber
+    a               owl:DatatypeProperty ;
+    rdfs:label      "has page number"@en ;
+    rdfs:range      xsd:integer .
+
+echo:hasOrder
+    a               owl:DatatypeProperty ;
+    rdfs:label      "has order"@en ;
+    rdfs:comment    "Position of a section, entry, or step in an ordered list."@en ;
+    rdfs:range      xsd:integer .
+
+echo:hasSourceFile
+    a               owl:DatatypeProperty ;
+    rdfs:label      "has source file"@en ;
+    rdfs:domain     echo:Document ;
+    rdfs:range      xsd:string .
+
+echo:hasSha256
+    a               owl:DatatypeProperty ;
+    rdfs:label      "has sha256"@en ;
+    rdfs:comment    "SHA-256 digest of the source file."@en ;
+    rdfs:range      xsd:string .
+
+
+# ----- 19.2 Evidence span pointers -----------------------------------------
+
+echo:sourceExcerpt
+    a               owl:DatatypeProperty ;
+    rdfs:label      "source excerpt"@en ;
+    rdfs:domain     echo:Evidence ;
+    rdfs:range      xsd:string .
+
+echo:sourcePage
+    a               owl:DatatypeProperty ;
+    rdfs:label      "source page"@en ;
+    rdfs:domain     echo:Evidence ;
+    rdfs:range      xsd:integer .
+
+echo:charStart
+    a               owl:DatatypeProperty ;
+    rdfs:label      "char start"@en ;
+    rdfs:domain     echo:TextSpan ;
+    rdfs:range      xsd:integer .
+
+echo:charEnd
+    a               owl:DatatypeProperty ;
+    rdfs:label      "char end"@en ;
+    rdfs:domain     echo:TextSpan ;
+    rdfs:range      xsd:integer .
+
+
+# ----- 19.3 Quantitative values --------------------------------------------
+
+echo:numericValue
+    a               owl:DatatypeProperty ;
+    rdfs:label      "numeric value"@en ;
+    rdfs:range      xsd:decimal .
+
+echo:categoricalValue
+    a               owl:DatatypeProperty ;
+    rdfs:label      "categorical value"@en ;
+    rdfs:range      xsd:string .
+
+
+# ----- 19.4 Confidence and uncertainty -------------------------------------
+
+echo:confidence
+    a               owl:DatatypeProperty ;
+    rdfs:label      "confidence"@en ;
+    rdfs:comment    "Numeric confidence in [0,1]."@en ;
+    rdfs:range      xsd:decimal .
+
+echo:certainty
+    a               owl:DatatypeProperty ;
+    rdfs:label      "certainty"@en ;
+    rdfs:comment    "Free-text or token certainty value (e.g. 'certain', 'probable'). Prefer echo:hasCertainty into echo:CertaintyScheme."@en ;
+    rdfs:range      xsd:string .
+
+echo:polarity
+    a               owl:DatatypeProperty ;
+    rdfs:label      "polarity"@en ;
+    rdfs:comment    "+1 / -1 or 'affirmed' / 'negated'. Prefer echo:hasPolarity into echo:PolarityScheme."@en ;
+    rdfs:range      xsd:string .
+
+echo:sourceReliability
+    a               owl:DatatypeProperty ;
+    rdfs:label      "source reliability"@en ;
+    rdfs:range      xsd:decimal .
+
+
+# ----- 19.5 Provenance timestamps ------------------------------------------
+
+echo:extractedAt
+    a               owl:DatatypeProperty ;
+    rdfs:label      "extracted at"@en ;
+    rdfs:domain     echo:ExtractionRun ;
+    rdfs:range      xsd:dateTime .
+
+echo:reviewedAt
+    a               owl:DatatypeProperty ;
+    rdfs:label      "reviewed at"@en ;
+    rdfs:range      xsd:dateTime .
+
+echo:hasOriginalText
+    a               owl:DatatypeProperty ;
+    rdfs:label      "has original text"@en ;
+    rdfs:comment    "Verbatim source text preserved for audit. Distinct from sourceExcerpt, which may be normalised."@en ;
+    rdfs:range      xsd:string .
+
+
+# ----- 19.6 Validity and status --------------------------------------------
+
+echo:validFrom
+    a               owl:DatatypeProperty ;
+    rdfs:label      "valid from"@en ;
+    rdfs:range      xsd:dateTime .
+
+echo:validUntil
+    a               owl:DatatypeProperty ;
+    rdfs:label      "valid until"@en ;
+    rdfs:range      xsd:dateTime .
+
+echo:status
+    a               owl:DatatypeProperty ;
+    rdfs:label      "status"@en ;
+    rdfs:comment    "Free-text status. Prefer echo:hasStatus into a controlled vocabulary."@en ;
+    rdfs:range      xsd:string .
+
+
+# ----- 19.7 Time stamps  ---------------------------------------------------
+
+echo:occurredAt
+    a               owl:DatatypeProperty ;
+    rdfs:label      "occurred at"@en ;
+    rdfs:domain     echo:Event ;
+    rdfs:range      xsd:dateTime .
+
+echo:recordedAt
+    a               owl:DatatypeProperty ;
+    rdfs:label      "recorded at"@en ;
+    rdfs:range      xsd:dateTime .
+
+echo:startsAt
+    a               owl:DatatypeProperty ;
+    rdfs:label      "starts at"@en ;
+    rdfs:range      xsd:dateTime .
+
+echo:endsAt
+    a               owl:DatatypeProperty ;
+    rdfs:label      "ends at"@en ;
+    rdfs:range      xsd:dateTime .
+
+echo:validAt
+    a               owl:DatatypeProperty ;
+    rdfs:label      "valid at"@en ;
+    rdfs:range      xsd:dateTime .
+
+
+# =============================================================================
+#  20. Example ABox  (sanity-check individuals)
+# =============================================================================
+#  This block illustrates the intended usage. Remove or move to a separate
+#  file before publishing the ontology TBox.
+
+echo:doc-001
+    a                  echo:Document ;
+    dcterms:title      "Sample Clinical Note" ;
+    echo:hasSourceFile "doc001.pdf" ;
+    echo:hasSha256     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" ;
+    echo:hasSection    echo:doc-001-sec-1 .
+
+echo:doc-001-sec-1
+    a                  echo:DocumentSection ;
+    echo:hasTitle      "Findings" ;
+    echo:hasOrder      1 ;
+    echo:hasOriginalText "Patient weight measured at 72.3 kg." .
+
+echo:span-001
+    a                  echo:Evidence , echo:TextSpan ;
+    echo:sourceExcerpt "Patient weight measured at 72.3 kg." ;
+    echo:sourcePage    1 ;
+    echo:charStart     0 ;
+    echo:charEnd       36 ;
+    echo:sourceSection echo:doc-001-sec-1 ;
+    echo:sourceDocument echo:doc-001 .
+
+echo:agent-llm
+    a                  echo:ExtractionModel ;
+    rdfs:label         "Claude Opus 4.7" ;
+    owl:versionInfo    "claude-opus-4-7" .
+
+echo:run-001
+    a                  echo:ExtractionRun ;
+    echo:extractedAt   "2026-05-07T10:00:00Z"^^xsd:dateTime ;
+    echo:usedModel     echo:agent-llm .
+
+echo:fact-001
+    a                  echo:ExtractedFact ;
+    echo:hasSubject    echo:patient-A ;
+    echo:hasAttribute  echo:var-bodyWeight ;
+    echo:hasValue      echo:value-001 ;
+    echo:hasEvidence   echo:span-001 ;
+    echo:extractedBy   echo:run-001 ;
+    echo:hasCertainty  echo:certain ;
+    echo:hasPolarity   echo:polarityAffirmed ;
+    echo:confidence    "0.97"^^xsd:decimal ;
+    echo:hasValidationStatus echo:validationPending .
+
+echo:patient-A
+    a                  echo:Entity ;
+    rdfs:label         "Patient A" .
+
+echo:var-bodyWeight
+    a                  echo:Variable ;
+    rdfs:label         "body weight"@en .
+
+echo:value-001
+    a                  echo:Quantity ;
+    echo:numericValue  "72.3"^^xsd:decimal ;
+    echo:hasUnit       echo:unit-kg .
+
+echo:unit-kg
+    a                  echo:Unit ;
+    rdfs:label         "kilogram"@en ;
+    skos:notation      "kg" .
+
+# =============================================================================
+#  End of file
+# =============================================================================
