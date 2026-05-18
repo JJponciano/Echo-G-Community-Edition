@@ -1,24 +1,72 @@
-This is free and unencumbered software released into the public domain.
 
-Anyone is free to copy, modify, publish, use, compile, sell, or
-distribute this software, either in source code form or as a compiled
-binary, for any purpose, commercial or non-commercial, and by any
-means.
+# LICENSE
 
-In jurisdictions that recognize copyright laws, the author or authors
-of this software dedicate any and all copyright interest in the
-software to the public domain. We make this dedication for the benefit
-of the public at large and to the detriment of our heirs and
-successors. We intend this dedication to be an overt act of
-relinquishment in perpetuity of all present and future rights to this
-software under copyright law.
+```text
+Echo-G Community Research License (EGRL) v1.0
+
+Copyright (c) 2026 Jean-Jacques Ponciano
+
+1. Purpose
+
+Echo-G is provided for academic research, teaching, scientific collaboration,
+and personal non-commercial experimentation.
+
+2. Permitted Uses
+
+Permission is granted to use, copy, modify, and distribute the software
+for non-commercial purposes, including:
+
+- academic research
+- educational activities
+- scientific publications
+- personal experimentation
+
+3. Commercial Restriction
+
+Commercial use of Echo-G is prohibited without prior written permission
+from the copyright holder.
+
+Commercial use includes, but is not limited to:
+
+- SaaS or hosted services
+- enterprise deployment
+- paid consulting services using Echo-G
+- commercial redistribution
+- integration into proprietary commercial products
+- paid AI platforms or workflows
+
+4. Redistribution
+
+Redistributions of the software or modified versions must:
+
+- retain this license
+- clearly indicate modifications
+- preserve attribution to Jean-Jacques Ponciano
+
+5. Citation Requirement
+
+Scientific publications using Echo-G should cite the project appropriately.
+
+Suggested citation:
+
+Ponciano, J.-J. (2026).
+Echo-G: Evidence-Centered Ontology Construction and
+Knowledge-Grounded AI Workbench.
+https://github.com/JJponciano/Echo-G
+
+6. Warranty Disclaimer
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
 
-For more information, please refer to <https://unlicense.org>
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE SOFTWARE
+OR THE USE OF THE SOFTWARE.
+
+7. Commercial Licensing
+
+For commercial licensing inquiries:
+
+Jean-Jacques Ponciano
+ponciano@geovast3d.com
