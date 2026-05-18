@@ -53,25 +53,80 @@ The entire pipeline — including evaluation — runs on a single workstation th
 
 ---
 
+## Requirements
+
+| Component | Minimum |
+|-----------|---------|
+| GPU VRAM | **24 GB** (to load Qwen3 MoE in Q4\_K\_M quantisation) |
+| RAM | 32 GB recommended |
+| OS | Windows 10/11, Linux, macOS |
+| Python | 3.12+ |
+| Disk | ~20 GB free (model weights + run artefacts) |
+
+The pipeline runs entirely on local hardware; no cloud API key is needed.
+
+---
+
 ## Installation
 
-**Prerequisites:** Python 3.12+, [Ollama](https://ollama.com) running locally with:
+### 1 — Install Ollama
+
+Download and install [Ollama](https://ollama.com/download) for your platform (Windows / Linux / macOS). Once installed, verify it is running:
 
 ```bash
-ollama pull qwen3:30b-a3b-q4_K_M   # uplift and fact-extraction (requires >= 24 GB GPU VRAM)
-ollama pull nomic-embed-text        # semantic similarity
+ollama list
 ```
 
-**Install Python dependencies:**
+Then pull the two models used by the pipeline:
 
 ```bash
+# Qwen3 MoE — uplift and atomic-fact extraction
+# (Qwen3 30B total parameters, ~3.6B active per token; ~16 GB in Q4_K_M)
+ollama pull qwen3.6
+
+# nomic-embed-text — sentence-level semantic similarity
+ollama pull nomic-embed-text
+```
+
+### 2 — Set up a Python 3.12 environment
+
+**Option A — conda / miniconda (recommended)**
+
+If you do not have conda, install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) first.
+
+```bash
+conda create -n echo-g python=3.12 -y
+conda activate echo-g
+```
+
+**Option B — standard venv**
+
+```bash
+python3.12 -m venv .venv
+# Linux / macOS
+source .venv/bin/activate
+# Windows
+.venv\Scripts\activate
+```
+
+### 3 — Install Python dependencies
+
+```bash
+# From the repo root (installs ollama, pdfplumber, rdflib)
 pip install -e .
 ```
 
-Or directly:
+Or without cloning:
 
 ```bash
 pip install ollama pdfplumber rdflib
+```
+
+### 4 — Verify the setup
+
+```bash
+python -c "import ollama, pdfplumber, rdflib; print('OK')"
+ollama run qwen3.6 "Reply with just the word READY." --nowordwrap
 ```
 
 ---
@@ -127,18 +182,17 @@ The three PDFs are independent Wikipedia treatments of *Orthohantavirus* (CC BY-
 python evaluate_pipeline.py \
     --input-dir eval/sources/hantavirus/ \
     --tbox      ontology/echo-core.ttl \
-    --out       eval/runs/hantavirus \
-    --model     qwen3:30b-a3b-q4_K_M
+    --out       eval/runs/hantavirus
 ```
 
-Expected wall-clock time: 30–55 minutes per article on a workstation with ≥ 24 GB GPU VRAM.  
-The similarity threshold τ = 0.78 is the library default in `compare_semantics.py`.
+The default model (`qwen3.6`) and threshold (τ = 0.78) match the published run exactly; no extra flags are needed.  
+Expected wall-clock time: 30–55 minutes per article on a workstation with ≥ 24 GB GPU VRAM.
 
 ---
 
 ## Results
 
-Results on the multilingual *Hantavirus* corpus (threshold τ = 0.78, Qwen3 30B-A3B Q4\_K\_M):
+Results on the multilingual *Hantavirus* corpus (threshold τ = 0.78, `qwen3.6` / Qwen3 30B-A3B Q4\_K\_M):
 
 | Article | Lang | Pages | Facts orig. | Facts rec. | Missing | Halluc. | Recall | Prec. | Halluc. rate |
 |---------|------|------:|------------:|-----------:|--------:|--------:|-------:|------:|-------------:|
